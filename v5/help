@@ -1,0 +1,12 @@
+  #####   #####     #    #     # ######  #     #
+ #     # #     #   # #   ##    # #     #  #   #
+ #       #        #   #  # #   # #     #   # #
+  #####  #       #     # #  #  # #     #    #
+       # #       ####### #   # # #     #    #
+ #     # #     # #     # #    ## #     #    #
+  #####   #####  #     # #     # ######     #
+
+Scandy is a network scanning tool that is developed as a project towards completion of
+Postgraduate Cybersecurity program by CareerEra
+
+scandy -t 127.0.0.1 -p 80
