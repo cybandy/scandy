@@ -1,6 +1,7 @@
 # Scandy_
 
 Scandy is a network vulnerability scanner built with python
+I have a tutorial of how I developed this scanner on [Youtube @cybandy](https://youtube.com/playlist?list=PLE9wWR6sJKjEyCgneyZPK_2qk9rggPv1J) you can check it out.
 
 ## Features
 
@@ -15,7 +16,7 @@ Install the required packages to use
     pip install -r requirements.txt
 
 ## Usage
-I have a tutorial of how I developed this scanner on [Youtube @cybandy](https://youtube.com/playlist?list=PLE9wWR6sJKjEyCgneyZPK_2qk9rggPv1J) you can check it out.
+
 
 |   Commands    	   |     Description         	      |
 |:-----------------:|:------------------------------:|
