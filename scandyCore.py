@@ -5,9 +5,14 @@ import socket
 import scapy.all as scapy
 from scapy.all import IP, TCP, ICMP, srp1, Ether, sr, sr1
 import manuf
-from helpers.nice_functions import from_iterable
+from helpers.nice_functions import *
+from helpers.printer import table_print
 import requests
 import ftplib
+import time
+import concurrent.futures
+from termcolor import colored
+from prettytable.colortable import ColorTable
 
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -20,12 +25,16 @@ class ScandyCore:
         self._ipValidator()
         # self._portValidator(self.args.port, "port")
         # self._portValidator(self.args.portrange, "port range")
-        self.port = self._portValidator(
+        port = self._portValidator(
             zip([self.args.port, self.args.portrange], ["port", "port range"]))
         self.target = self.ip_processor()
+        activeips = self._active_devices_ip()
+        activeips = activeips.keys()
+        res = self.speed(self.port_scanner, activeips, ports=port)
+        table_print(res, activeips)
 
-        self.activeips = self._active_devices_ip()
-        self.port_scanner()
+
+        # self.port_scanner(ip_port)
 
     def _argument_processor(self):
         """
@@ -43,6 +52,8 @@ class ScandyCore:
                             help="The port to be scanned")
         parser.add_argument("-pr", "--portrange", nargs=2, type=int, default=[],
                             help="The port range to be scanned")
+        parser.add_argument("-th", "--threads", type=int, default=20,
+                            help="The number of threads")
 
         self.args = parser.parse_args()
 
@@ -53,20 +64,26 @@ class ScandyCore:
 
         return
 
-    def port_scanner(self):
-        active_ip = self.activeips.keys()
-        
-        for ip in active_ip:
-            pkt = IP(dst=ip)/TCP(flags="S", dport=self.port)
-            ans, unans = sr(pkt, timeout=60, verbose=False)
+    def port_scanner(self, ip_port_list):
+        # active_ip = self.activeips.keys()
+        unique_ips = {i for i,j in ip_port_list}
+        res = {
+            ip : []
+            for ip in unique_ips
+        }
+        for ip,port in ip_port_list:
+            pkt = IP(dst=ip)/TCP(flags="S", dport=port)
+            ans, unans = sr(pkt, timeout=3, verbose=False)
 
             pkts_open_ports = ans.filter(
                 lambda s, r: TCP in r and r[TCP].flags == "SA")
-            if not pkts_open_ports:
-                print(f"{ip} has no open ports")
-                continue
-            print(
-                f"-------------------------------\n Port Scanning - {ip}\n--------------------------------\n")
+            
+            # if not pkts_open_ports:
+            #     print(f"{ip} has no open ports")
+            #     continue
+            # print(
+            #     f"-------------------------------\n Port Scanning - {ip}\n--------------------------------\n")
+
             for s, r in pkts_open_ports:
                 add_info = ""
                 service = self.port_service(s.dport)
@@ -79,8 +96,34 @@ class ScandyCore:
                 # ftp banner
                 if "ftp" in banner.casefold():
                     banner, add_info = self.ftp_banner_additional_info(ip, s.dport)
+                
+                res[ip].append([s.dport, colored("OPEN","green"), service, banner.replace("\r\n", " "), add_info])
 
-                print(f"[+] TCP/{s.dport}   opened    {service}    {banner} {add_info}")
+                # print(f"[+] TCP/{s.dport}   opened    {service}    {banner} {add_info}")
+
+        return res
+    
+    def speed(self, func, jobs, ports=None):
+        num_workers = self.args.threads
+
+        if ports != None:
+            jobs = list(ip_port_pair(jobs, ports))
+
+        # fix the problem of having too many workers
+        if num_workers <= len(jobs):
+            len_batch = len(jobs) // num_workers
+        else:
+            len_batch = len(jobs)
+
+        with concurrent.futures.ThreadPoolExecutor(num_workers) as executor:
+            futures = [
+                executor.submit(func, batch)
+                for batch in batched(jobs, len_batch)
+                
+            ]
+            concurrent.futures.wait(futures)
+        
+        return [i.result() for i in futures]
 
 
     def port_service(self,port):
@@ -93,6 +136,7 @@ class ScandyCore:
     def _port_banner(self, ip, port):
         banner = b""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
             s.connect((ip, port))
             try:
                 s.send(b"Banner_query\r\n")
@@ -156,7 +200,7 @@ class ScandyCore:
 
         return list(
             set(
-                [i for i in from_iterable(p)]
+                list(from_iterable(p))
             )
         )
 
@@ -176,16 +220,33 @@ class ScandyCore:
         return
 
     def _active_devices_ip(self):
+
+        table = ColorTable()
+        table.field_names = ["IP Address", "Hostname", "Mac Address", "Manufacturer"]
+
         ips = list(self.target)
         active_ip = dict()
         for ip in ips:
+            # hostname
+            hostname =""
+            try:
+                hostname = socket.gethostbyaddr(ip)
+            except:
+                pass
+
             pkt = Ether()/IP(dst=ip)/ICMP()
-            res = srp1(pkt, timeout=3, verbose=False)
+            res = srp1(pkt, timeout=1, verbose=False)
             if res:
                 os = self.os_fingerprinting(res.payload.ttl)
-                mac_addr = res.src
+                # mac_addr = res.src
+                try:
+                    mac_addr = scapy.getmacbyip(ip).upper()
+                except:
+                    mac_addr = res.src
                 manufacturer = self.manufacturer(mac_addr)
-                print(f"[+] {ip} : {mac_addr}: {manufacturer}: {os}")
+
+                table.add_row([ip,hostname,mac_addr,manufacturer])
+                # print(f"[+] {ip} : {mac_addr}: {manufacturer}: {os}")
                 active_ip[ip] = {
                     "os": os, "mac": mac_addr, "manuf": manufacturer
                 }
@@ -193,6 +254,7 @@ class ScandyCore:
         if not active_ip:
             sys.exit(
                 f"Sorry! None of the devices/IP(s) {self.args.target} could be reached.")
+        print(table)
         return active_ip
 
     @staticmethod
