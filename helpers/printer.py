@@ -1,10 +1,12 @@
 # from helpers.nice_functions import from_iterable
-from CVE_check import scan_vulns
 import pickle
+import sys
+
 from prettytable.colortable import ColorTable
 from termcolor import colored
 
-import sys
+from CVE_check import scan_vulns
+
 sys.path.append("/home/kali/Documents/network_scanner")
 
 

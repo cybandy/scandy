@@ -1,22 +1,22 @@
 import argparse
+import concurrent.futures
+import ftplib
+import logging
+import socket
 import sys
 import telnetlib
-import socket
-import scapy.all as scapy
-from scapy.all import IP, TCP, ICMP, srp1, Ether, sr, sr1
+
 import manuf
-from helpers.nice_functions import *
-from helpers.printer import table_print
 import requests
-import ftplib
-import time
-import concurrent.futures
-from termcolor import colored
+import scapy.all as scapy
 from prettytable.colortable import ColorTable
+from scapy.all import IP, TCP, ICMP, srp1, Ether, sr
+from termcolor import colored
 
 from CVE_check import scan_vulns
+from helpers.nice_functions import *
+from helpers.printer import table_print
 
-import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 
@@ -74,7 +74,7 @@ class ScandyCore:
             for ip in unique_ips
         }
         for ip, port in ip_port_list:
-            pkt = IP(dst=ip)/TCP(flags="S", dport=port)
+            pkt = IP(dst=ip) / TCP(flags="S", dport=port)
             ans, unans = sr(pkt, timeout=3, verbose=False)
 
             pkts_open_ports = ans.filter(
@@ -101,7 +101,7 @@ class ScandyCore:
                         ip, s.dport)
 
                 res[ip].append([s.dport, colored("OPEN", "green"),
-                               service, banner.replace("\r\n", " "), add_info])
+                                service, banner.replace("\r\n", " "), add_info])
 
                 # print(f"[+] TCP/{s.dport}   opened    {service}    {banner} {add_info}")
 
@@ -194,7 +194,7 @@ class ScandyCore:
                     sys.exit(
                         f"Check the entered {name}: {port}. Valid port number should be between 1 and 65536")
                 if name == "port range":
-                    port = list(range(port[0], port[1]+1))
+                    port = list(range(port[0], port[1] + 1))
                 p.append(port)
 
         if not p:
@@ -237,7 +237,7 @@ class ScandyCore:
             except:
                 pass
 
-            pkt = Ether()/IP(dst=ip)/ICMP()
+            pkt = Ether() / IP(dst=ip) / ICMP()
             res = srp1(pkt, timeout=1, verbose=False)
             if res:
                 os = self.os_fingerprinting(res.payload.ttl)

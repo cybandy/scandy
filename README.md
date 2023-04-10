@@ -1,22 +1,32 @@
-# Scandy_
+# Scandy 
 
-Scandy is a network vulnerability scanner built with python
-I have a tutorial of how I developed this scanner on [Youtube @cybandy](https://youtube.com/playlist?list=PLE9wWR6sJKjEyCgneyZPK_2qk9rggPv1J) you can check it out.
+  
+Scandy is a network vulnerability scanner built with python.
+This works best on linux(kali) but to use it on windows check the branch [old_version](https://github.com/andyboat75/scandy/tree/old_version "old_version")
+I have a tutorial of how I developed this scanner on [![@cybandy](https://img.shields.io/badge/cybandy-%23EE4831.svg?&style=for-the-badge&logo=youtube&logoColor=white "@cybandy")](https://youtube.com/playlist?list=PLE9wWR6sJKjEyCgneyZPK_2qk9rggPv1J "@cybandy") you can check it out.  
+  
+## Features  
+  
 
-## Features
-
-- Scan network for connected devices.
-     - command scandy -t 192.168.95.1/24
-- Scan for open ports
-- Search for existing CVE for open ports using [Vulners API](https://vulners.com)
+ - Scan network for connected(active) devices. 
+ - Retrieve information such as Mac address, OS, Host name,
+ - Scan for open ports, port services, port banner and additional vulnerabilities.
+ - Search for existing CVE for open ports using [Vulners API](https://vulners.com)  
 
 ## Installation
-Install the required packages to use
 
-    pip install -r requirements.txt
+Create a python environment
+`python -m venv venv`
 
+Activate the environment
+`source ./venv/bin/activate`
+
+Install the required packages to use 
+`pip install -r requirements.txt`
+
+#### Caution
+Because scapy interact directly with the raw socket of your system it requires sudo priveledges. You can directly call sudo as I have shown below or follow the explanation [here](http://https://github.com/Forescout/project-memoria-detector/issues/6 "here") to tweak it as you want it.
 ## Usage
-
 
 |   Commands    	   |     Description         	      |
 |:-----------------:|:------------------------------:|

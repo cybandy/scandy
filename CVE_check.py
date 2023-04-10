@@ -1,6 +1,5 @@
 import vulners
 from prettytable.colortable import ColorTable, Themes
-from termcolor import colored
 
 
 class CVEcheck:

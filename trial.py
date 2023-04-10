@@ -40,15 +40,10 @@ if __name__=='__main__':
      """
 
 
-
-from scapy.all import *
-from pprint import pprint
-
 def ip_pair(x, y):
     for i in x:
         for j in y:
-            yield i,j
-
+            yield i, j
 
 # ip_range = IP(dst="192.168.227.1/28")
 # ip_range = [i.dst for i in ip_range]
@@ -58,8 +53,3 @@ def ip_pair(x, y):
 # unique_ips = {i for i,j in ip_pair(ip_range, port_range)}
 
 # pprint(unique_ips)
-
-
-
-
-

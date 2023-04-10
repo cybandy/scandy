@@ -1,4 +1,3 @@
-
 from itertools import islice
 
 
@@ -12,7 +11,8 @@ def from_iterable(iterables):
 def ip_port_pair(x, y):
     for i in x:
         for j in y:
-            yield i,j
+            yield i, j
+
 
 def batched(iterable, n):
     "Batch data into tuples of length n. The last batch may be shorter."
