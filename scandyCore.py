@@ -14,6 +14,8 @@ import concurrent.futures
 from termcolor import colored
 from prettytable.colortable import ColorTable
 
+from CVE_check import scan_vulns
+
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
@@ -31,8 +33,8 @@ class ScandyCore:
         activeips = self._active_devices_ip()
         activeips = activeips.keys()
         res = self.speed(self.port_scanner, activeips, ports=port)
-        table_print(res, activeips)
-
+        search_exploit = table_print(res, activeips)
+        scan_vulns(search_exploit)
 
         # self.port_scanner(ip_port)
 
@@ -66,18 +68,18 @@ class ScandyCore:
 
     def port_scanner(self, ip_port_list):
         # active_ip = self.activeips.keys()
-        unique_ips = {i for i,j in ip_port_list}
+        unique_ips = {i for i, j in ip_port_list}
         res = {
-            ip : []
+            ip: []
             for ip in unique_ips
         }
-        for ip,port in ip_port_list:
+        for ip, port in ip_port_list:
             pkt = IP(dst=ip)/TCP(flags="S", dport=port)
             ans, unans = sr(pkt, timeout=3, verbose=False)
 
             pkts_open_ports = ans.filter(
                 lambda s, r: TCP in r and r[TCP].flags == "SA")
-            
+
             # if not pkts_open_ports:
             #     print(f"{ip} has no open ports")
             #     continue
@@ -92,17 +94,19 @@ class ScandyCore:
                 # html banner
                 if "html" in banner.lower() or ("http" in banner.lower()):
                     banner = self.http_banner(ip, s.dport)
-                
+
                 # ftp banner
                 if "ftp" in banner.casefold():
-                    banner, add_info = self.ftp_banner_additional_info(ip, s.dport)
-                
-                res[ip].append([s.dport, colored("OPEN","green"), service, banner.replace("\r\n", " "), add_info])
+                    banner, add_info = self.ftp_banner_additional_info(
+                        ip, s.dport)
+
+                res[ip].append([s.dport, colored("OPEN", "green"),
+                               service, banner.replace("\r\n", " "), add_info])
 
                 # print(f"[+] TCP/{s.dport}   opened    {service}    {banner} {add_info}")
 
         return res
-    
+
     def speed(self, func, jobs, ports=None):
         num_workers = self.args.threads
 
@@ -119,19 +123,17 @@ class ScandyCore:
             futures = [
                 executor.submit(func, batch)
                 for batch in batched(jobs, len_batch)
-                
+
             ]
             concurrent.futures.wait(futures)
-        
+
         return [i.result() for i in futures]
 
-
-    def port_service(self,port):
+    def port_service(self, port):
         try:
             return socket.getservbyport(port)
         except:
             return "Unknown"
-              
 
     def _port_banner(self, ip, port):
         banner = b""
@@ -146,7 +148,7 @@ class ScandyCore:
                     pass
             except:
                 pass
-        
+
         try:
             banner = banner.decode("utf-8")
         except:
@@ -158,15 +160,15 @@ class ScandyCore:
         uploads = {"points": 3, "total": 10}
         req = requests.get(f"http://{ip}:{port}/", params=uploads)
         return req.headers["Server"]
-    
-    def ftp_banner_additional_info(self, ip,port):
+
+    def ftp_banner_additional_info(self, ip, port):
         ftp = ftplib.FTP()
         ftp.connect(ip, port)
         banner = ftp.getwelcome()
         try:
             login = ftp.login()
             if "successful" in login:
-                add_info= "Vulnerable to anonymous login"
+                add_info = "Vulnerable to anonymous login"
             ftp.quit()
         except:
             pass
@@ -222,13 +224,14 @@ class ScandyCore:
     def _active_devices_ip(self):
 
         table = ColorTable()
-        table.field_names = ["IP Address", "Hostname", "Mac Address", "Manufacturer"]
+        table.field_names = ["IP Address",
+                             "Hostname", "Mac Address", "Manufacturer"]
 
         ips = list(self.target)
         active_ip = dict()
         for ip in ips:
             # hostname
-            hostname =""
+            hostname = ""
             try:
                 hostname = socket.gethostbyaddr(ip)
             except:
@@ -245,7 +248,7 @@ class ScandyCore:
                     mac_addr = res.src
                 manufacturer = self.manufacturer(mac_addr)
 
-                table.add_row([ip,hostname,mac_addr,manufacturer])
+                table.add_row([ip, hostname, mac_addr, manufacturer])
                 # print(f"[+] {ip} : {mac_addr}: {manufacturer}: {os}")
                 active_ip[ip] = {
                     "os": os, "mac": mac_addr, "manuf": manufacturer
@@ -276,6 +279,5 @@ class ScandyCore:
         m = p.get_manuf_long(mac_addr)
         return "Unknown" if m is None else m
 
-
     def vuln_search(self, text):
-        pass        
+        pass
