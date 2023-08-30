@@ -11,7 +11,13 @@ I have a tutorial of how I developed this scanner on [YouTube](https://youtube.c
 - Scan for open ports, port services, port banners and additional vulnerabilities.
 - Search for existing CVE for open ports using [Vulners API](https://vulners.com)  
 
-## InstallationCreate a Python environment `python` -m venv venv`
+## Installation
+
+Create a Python environment.
+
+```sh
+python  -m venv venv
+```
 
 Activate the environment
 
@@ -56,7 +62,7 @@ The command below will check for all the devices on the network 192.168.227.1/28
 sudo python scandy.py -t 192.168.227.1/28 -p 80 22 221 -pr 2000 5000
 ```
 
-**Note:** If you are getting moduleNotFoundError, directly reference python in the virtual environment as shown below.
+**Note:** If you are getting moduleNotFoundError, directly reference Python in the virtual environment as shown below.
 
 ```sh
 sudo ./venv/bin/python3 scandy.py -t 192.168.227.1/28
